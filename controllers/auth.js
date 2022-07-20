@@ -2,11 +2,10 @@ const User = require("../models/User");
 const crypto = require("crypto");
 const ErrorResponse = require("../utlis/errorresponse");
 const sendEmail = require("../utlis/sendEmail");
-const user = require("../models/User");
 exports.register = async (req, res, next) => {
   const { username, email, password, package } = req.body;
   try {
-    User.findOne({ email: email }, async (err, user) => {
+    User.findOne({ email }, async (err, user) => {
       if (user) {
         return next(new ErrorResponse("user already registed"), 400);
       } else {
@@ -66,12 +65,10 @@ exports.forgetpassword = async (req, res, next) => {
       subject: "password reset request",
       message,
     });
-    res
-      .status(200)
-      .json({
-        success: true,
-        data: `email sent to ${user.email} successfully`,
-      });
+    res.status(200).json({
+      success: true,
+      data: `email sent to ${user.email} successfully`,
+    });
   } catch (error) {
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
@@ -112,6 +109,20 @@ exports.resetPassword = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.dashboard = async (req, res, next) => {
+  const products = await User.findById(req.user._id);
+  // const productCount = await Product.countDocuments()
+  if (!products) {
+      return next(new Errorhandler("product not found", 404))
+  }
+  res.status(200).json({
+      sucess: true,
+      products,
+      // productCount,
+  })
+};
+
 const sendToken = (user, statusCode, res) => {
   const token = user.getSignedToken();
   res.status(statusCode).json({ success: true, token });
